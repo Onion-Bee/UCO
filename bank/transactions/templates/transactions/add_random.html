@@ -1,0 +1,18 @@
+{% extends "transactions/base.html" %}
+{% block title %}Add Random — Bank Transactions{% endblock %}
+
+{% block content %}
+  <h1>Generate Random Transactions</h1>
+  <div class="card p-4 shadow-sm mt-3">
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {{ form.as_p|safe }}
+      <button type="submit" class="btn btn-warning">
+        Generate
+      </button>
+      <a href="{% url 'transactions:landing' %}" class="btn btn-link">
+        Cancel
+      </a>
+    </form>
+  </div>
+{% endblock %}

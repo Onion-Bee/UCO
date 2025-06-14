@@ -1,0 +1,18 @@
+{% extends "transactions/base.html" %}
+{% block title %}Add Transaction — Bank Transactions{% endblock %}
+
+{% block content %}
+  <h1>Add a Transaction</h1>
+  <div class="card p-4 shadow-sm mt-3">
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {{ form.as_p|safe }}
+      <button type="submit" class="btn btn-primary">
+        Create Transaction
+      </button>
+      <a href="{% url 'transactions:landing' %}" class="btn btn-link">
+        Cancel
+      </a>
+    </form>
+  </div>
+{% endblock %}

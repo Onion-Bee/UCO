@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Bank Transactions</title>
+</head>
+<body>
+  <h1>Bank Transactions</h1>
+
+  <h2>Create a Transaction</h2>
+  <form method="post">
+    {% csrf_token %}
+    {{ manual_form.as_p }}
+    <button type="submit" name="manual-submit">Create</button>
+  </form>
+
+  <h2>Generate Random Transactions</h2>
+  <form method="post">
+    {% csrf_token %}
+    {{ random_form.as_p }}
+    <button type="submit" name="random-submit">Random</button>
+  </form>
+
+  <h2>Recent Transactions</h2>
+  <table border="1" cellpadding="5">
+    <tr>
+      <th>ID</th><th>Sender</th><th>Receiver</th><th>Value</th><th>Time</th>
+    </tr>
+    {% for tx in recent %}
+      <tr>
+        <td>{{ tx.id }}</td>
+        <td>{{ tx.sender }}</td>
+        <td>{{ tx.receiver }}</td>
+        <td>${{ tx.value }}</td>
+        <td>{{ tx.created_at }}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="5">No transactions yet.</td></tr>
+    {% endfor %}
+  </table>
+</body>
+</html>
