@@ -28,6 +28,9 @@
             <td>{{ tx.receiver }}</td>
             <td>₹ {{ tx.value }}</td>
             <td>{{ tx.created_at|date:"SHORT_DATETIME_FORMAT" }}</td>
+            <td>{{ tx.is_fraud|yesno:"🚩,OK" }}</td>
+            <td>{{ tx.fraud_prob|floatformat:2 }}</td>
+            <td>{{ tx.is_anomaly|yesno:"❗,–" }}</td>
           </tr>
         {% empty %}
           <tr><td colspan="5" class="text-center">No transactions yet.</td></tr>
@@ -36,3 +39,4 @@
     </table>
   </div>
 {% endblock %}
+

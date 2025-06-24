@@ -11,15 +11,50 @@ def landing_view(request):
         'recent': recent,
     })
 
+# def add_transaction_view(request):
+#     form = TransactionForm(request.POST or None)
+#     if form.is_valid():
+#         Transaction.objects.create(
+#             sender=form.cleaned_data['sender'],
+#             receiver=form.cleaned_data['receiver'],
+#             value=form.cleaned_data['value']
+#         )
+#         return redirect('transactions:landing')
+#     return render(request, 'transactions/add_transaction.html', {
+#         'form': form,
+#     })
+from .fraud import check_fraud
+
+from django.shortcuts import render, redirect
+from .models import Transaction
+from .forms import TransactionForm
+from .fraud import check_fraud
+
 def add_transaction_view(request):
-    form = TransactionForm(request.POST or None)
-    if form.is_valid():
-        Transaction.objects.create(
-            sender=form.cleaned_data['sender'],
-            receiver=form.cleaned_data['receiver'],
-            value=form.cleaned_data['value']
-        )
-        return redirect('transactions:landing')
+    if request.method == "POST":
+        form = TransactionForm(request.POST)
+        if form.is_valid():
+            # 1) extract & check fraud
+            amount = float(form.cleaned_data['value'])
+            is_fraud, prob, anomaly = check_fraud(amount)
+
+            # 2) save the transaction (and fraud flags if you added those fields)
+            Transaction.objects.create(
+                sender     = form.cleaned_data['sender'],
+                receiver   = form.cleaned_data['receiver'],
+                value      = amount,
+                # If you extended the model:
+                is_fraud   = is_fraud,
+                fraud_prob = prob,
+                is_anomaly = anomaly,
+            )
+            return redirect('transactions:landing')
+        # fall through to re-render the form with errors
+    else:
+        # GET — unbound blank form
+        form = TransactionForm()
+
+    # **This return runs for both GET and invalid POST**
     return render(request, 'transactions/add_transaction.html', {
         'form': form,
     })
