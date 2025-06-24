@@ -14,10 +14,9 @@ def train_models(data_path='amount_only.csv'):
     # Load data
     df = pd.read_csv(data_path)
 
-    # Label: top 5% amounts = fraud, rest = legit
-    threshold = np.percentile(df['amount'], 95)
-    df['label'] = (df['amount'] >= threshold).astype(int)
-    print(f"Using amount >= {threshold:.2f} as fraud label (≈5% of data)")
+    # Add synthetic label (e.g., 5% fraud for demonstration)
+    if 'label' not in df.columns:
+        df['label'] = np.random.choice([0, 1], size=len(df), p=[0.95, 0.05])
 
     X = df[['amount']]
     y = df['label']
@@ -74,6 +73,7 @@ def load_models():
     iso = joblib.load('isolation_forest.pkl')
     return scaler, xgb, iso
 
+
 def predict_transaction(transaction: dict, scaler, xgb, iso):
     df = pd.DataFrame([transaction])
     X_tr = scaler.transform(df)
@@ -87,6 +87,7 @@ def predict_transaction(transaction: dict, scaler, xgb, iso):
 if __name__ == '__main__':
     import sys
     if len(sys.argv) > 1 and sys.argv[1] == 'train':
+        # Train models:
         feature_names = train_models(data_path='amount_only.csv')
         print("Training completed. Run without arguments for inference.")
         sys.exit(0)
@@ -108,9 +109,3 @@ if __name__ == '__main__':
     print("\n=== Fraud Detection Result ===")
     print(f"Fraud probability: {result['fraud_probability']:.4f}")
     print(f"Anomaly flag: {'YES' if result['anomaly_flag'] else 'NO'}")
-
-    # Example threshold-based alert
-    if result['fraud_probability'] > 0.5:
-        print("⚠️  HIGH FRAUD RISK")
-    else:
-        print("✅  LOW RISK")
