@@ -27,6 +27,7 @@
           <th>Anomaly</th>
           <th>Risk Level</th>
           <th>IP Address</th>
+          <th>Location</th>
         </tr>
       </thead>
       <tbody>
@@ -50,6 +51,7 @@
               {% endif %}
             </td>
             <td>{{ tx.ip_address|default:"–" }}</td>
+            <td>{{tx.location }}</td>
           </tr>
         {% empty %}
           <tr><td colspan="10" class="text-center">No transactions yet.</td></tr>

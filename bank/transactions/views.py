@@ -17,6 +17,12 @@ from .forms import TransactionForm, RandomTransactionsForm
 from .fraud import check_fraud
 
 
+import requests
+from django.shortcuts import render, redirect
+from .models import Transaction
+from .forms import TransactionForm, RandomTransactionsForm
+from .fraud import check_fraud
+
 def add_transaction_view(request):
     if request.method == "POST":
         form = TransactionForm(request.POST)
@@ -24,7 +30,7 @@ def add_transaction_view(request):
             amount = float(form.cleaned_data['value'])
             is_fraud, prob, anomaly = check_fraud(amount)
 
-            # determine risk level
+            # 3‑tier risk
             if prob >= 0.7:
                 risk = 'high'
             elif prob >= 0.3:
@@ -39,15 +45,27 @@ def add_transaction_view(request):
             else:
                 ip = request.META.get('REMOTE_ADDR')
 
+            # call ipapi.co
+            try:
+                resp = requests.get(f"https://ipapi.co/{ip}/json/", timeout=2)
+                data = resp.json()
+                city    = data.get("city", "")
+                region  = data.get("region", "")
+                country = data.get("country_name", "")
+                location = ", ".join(part for part in (city, region, country) if part)
+            except Exception:
+                location = "Unknown"
+
+            # save
             Transaction.objects.create(
-                # sender is defaulted by the model
                 receiver   = form.cleaned_data['receiver'],
                 value      = amount,
                 ip_address = ip,
+                location   = location,
                 is_fraud   = is_fraud,
-                fraud_prob = round(prob, 3),     # round to 3 decimals
+                fraud_prob = round(prob, 3),
                 is_anomaly = anomaly,
-                risk_level = risk
+                risk_level = risk,
             )
             return redirect('transactions:landing')
     else:
