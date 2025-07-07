@@ -11,53 +11,50 @@ def landing_view(request):
         'recent': recent,
     })
 
-# def add_transaction_view(request):
-#     form = TransactionForm(request.POST or None)
-#     if form.is_valid():
-#         Transaction.objects.create(
-#             sender=form.cleaned_data['sender'],
-#             receiver=form.cleaned_data['receiver'],
-#             value=form.cleaned_data['value']
-#         )
-#         return redirect('transactions:landing')
-#     return render(request, 'transactions/add_transaction.html', {
-#         'form': form,
-#     })
-from .fraud import check_fraud
-
 from django.shortcuts import render, redirect
 from .models import Transaction
-from .forms import TransactionForm
+from .forms import TransactionForm, RandomTransactionsForm
 from .fraud import check_fraud
+
 
 def add_transaction_view(request):
     if request.method == "POST":
         form = TransactionForm(request.POST)
         if form.is_valid():
-            # 1) extract & check fraud
             amount = float(form.cleaned_data['value'])
             is_fraud, prob, anomaly = check_fraud(amount)
 
-            # 2) save the transaction (and fraud flags if you added those fields)
+            # determine risk level
+            if prob >= 0.7:
+                risk = 'high'
+            elif prob >= 0.3:
+                risk = 'med'
+            else:
+                risk = 'low'
+
+            # get client IP
+            ip = request.META.get('HTTP_X_FORWARDED_FOR')
+            if ip:
+                ip = ip.split(',')[0].strip()
+            else:
+                ip = request.META.get('REMOTE_ADDR')
+
             Transaction.objects.create(
-                sender     = form.cleaned_data['sender'],
+                # sender is defaulted by the model
                 receiver   = form.cleaned_data['receiver'],
                 value      = amount,
-                # If you extended the model:
+                ip_address = ip,
                 is_fraud   = is_fraud,
-                fraud_prob = prob,
+                fraud_prob = round(prob, 3),     # round to 3 decimals
                 is_anomaly = anomaly,
+                risk_level = risk
             )
             return redirect('transactions:landing')
-        # fall through to re-render the form with errors
     else:
-        # GET — unbound blank form
         form = TransactionForm()
 
-    # **This return runs for both GET and invalid POST**
-    return render(request, 'transactions/add_transaction.html', {
-        'form': form,
-    })
+    return render(request, 'transactions/add_transaction.html', {'form': form})
+
 
 def add_random_view(request):
     form = RandomTransactionsForm(request.POST or None)
